@@ -5,6 +5,14 @@ const nextConfig = {
       bodySizeLimit: "10mb",
     },
   },
+  rewrites: async () => {
+    return [
+      {
+        source: '/login',
+        destination: '/'
+      }
+    ]
+  },
 };
 
 export default nextConfig;

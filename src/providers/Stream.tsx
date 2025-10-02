@@ -90,7 +90,6 @@ const StreamSession = ({
     defaultHeaders: jwt
       ? {
           Authorization: `Bearer ${jwt}`,
-          "x-supabase-access-token": jwt,
         }
       : undefined,
     fetchStateHistory: true,

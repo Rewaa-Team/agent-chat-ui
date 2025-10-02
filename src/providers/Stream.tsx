@@ -24,6 +24,7 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { getApiKey } from "@/lib/api-key";
 import { useThreads } from "./Thread";
 import { toast } from "sonner";
+import { fetchAuthSession } from "aws-amplify/auth";
 
 export type StateType = { messages: Message[]; ui?: UIMessage[] };
 
@@ -79,11 +80,19 @@ const StreamSession = ({
 }) => {
   const [threadId, setThreadId] = useQueryState("threadId");
   const { getThreads, setThreads } = useThreads();
+  const [jwt, setJwt] = useState<string | undefined>(undefined);
+
   const streamValue = useTypedStream({
     apiUrl,
     apiKey: apiKey ?? undefined,
     assistantId,
     threadId: threadId ?? null,
+    defaultHeaders: jwt
+      ? {
+          Authorization: `Bearer ${jwt}`,
+          "x-supabase-access-token": jwt,
+        }
+      : undefined,
     fetchStateHistory: true,
     onCustomEvent: (event, options) => {
       if (isUIMessage(event) || isRemoveUIMessage(event)) {
@@ -100,6 +109,16 @@ const StreamSession = ({
       sleep().then(() => getThreads().then(setThreads).catch(console.error));
     },
   });
+
+  useEffect(() => {
+    const fetchJwt = async () => {
+      const session = await fetchAuthSession();
+      const token = session.tokens?.accessToken.toString();
+      setJwt(token);
+    };
+
+    fetchJwt();
+  }, []);
 
   useEffect(() => {
     checkGraphStatus(apiUrl, apiKey).then((ok) => {

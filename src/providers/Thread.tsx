@@ -12,6 +12,7 @@ import {
   SetStateAction,
 } from "react";
 import { createClient } from "./client";
+import { fetchAuthSession } from "aws-amplify/auth";
 
 interface ThreadContextType {
   getThreads: () => Promise<Thread[]>;
@@ -49,7 +50,10 @@ export function ThreadProvider({ children }: { children: ReactNode }) {
 
   const getThreads = useCallback(async (): Promise<Thread[]> => {
     if (!apiUrl || !assistantId) return [];
-    const client = createClient(apiUrl, getApiKey() ?? undefined);
+
+    const authSession = await fetchAuthSession();
+    const jwt = authSession.tokens?.accessToken.toString();
+    const client = createClient(apiUrl, getApiKey() ?? undefined, jwt);
 
     const threads = await client.threads.search({
       metadata: {

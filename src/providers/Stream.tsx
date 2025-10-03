@@ -50,14 +50,16 @@ async function sleep(ms = 4000) {
 async function checkGraphStatus(
   apiUrl: string,
   apiKey: string | null,
+  jwt?: string,
 ): Promise<boolean> {
   try {
     const res = await fetch(`${apiUrl}/info`, {
-      ...(apiKey && {
-        headers: {
+      headers: {
+        Authorization: `Bearer ${jwt}`,
+        ...(apiKey && {
           "X-Api-Key": apiKey,
-        },
-      }),
+        })
+      },
     });
 
     return res.ok;
@@ -120,7 +122,8 @@ const StreamSession = ({
   }, []);
 
   useEffect(() => {
-    checkGraphStatus(apiUrl, apiKey).then((ok) => {
+    if (!jwt) return;
+    checkGraphStatus(apiUrl, apiKey, jwt).then((ok) => {
       if (!ok) {
         toast.error("Failed to connect to LangGraph server", {
           description: () => (
@@ -135,7 +138,7 @@ const StreamSession = ({
         });
       }
     });
-  }, [apiKey, apiUrl]);
+  }, [apiKey, apiUrl, jwt]);
 
   return (
     <StreamContext.Provider value={streamValue}>

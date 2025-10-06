@@ -25,6 +25,7 @@ import { getApiKey } from "@/lib/api-key";
 import { useThreads } from "./Thread";
 import { toast } from "sonner";
 import { fetchAuthSession } from "aws-amplify/auth";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export type StateType = { messages: Message[]; ui?: UIMessage[] };
 
@@ -74,15 +75,16 @@ const StreamSession = ({
   apiKey,
   apiUrl,
   assistantId,
+  jwt,
 }: {
   children: ReactNode;
   apiKey: string | null;
   apiUrl: string;
   assistantId: string;
+  jwt: string;
 }) => {
   const [threadId, setThreadId] = useQueryState("threadId");
   const { getThreads, setThreads } = useThreads();
-  const [jwt, setJwt] = useState<string | undefined>(undefined);
 
   const streamValue = useTypedStream({
     apiUrl,
@@ -112,17 +114,6 @@ const StreamSession = ({
   });
 
   useEffect(() => {
-    const fetchJwt = async () => {
-      const session = await fetchAuthSession();
-      const token = session.tokens?.idToken?.toString();
-      setJwt(token);
-    };
-
-    fetchJwt();
-  }, []);
-
-  useEffect(() => {
-    if (!jwt) return;
     checkGraphStatus(apiUrl, apiKey, jwt).then((ok) => {
       if (!ok) {
         toast.error("Failed to connect to LangGraph server", {
@@ -173,6 +164,8 @@ export const StreamProvider: React.FC<{ children: ReactNode }> = ({
     return storedKey || "";
   });
 
+  const [jwt, setJwt] = useState<string | undefined>(undefined);
+
   const setApiKey = (key: string) => {
     window.localStorage.setItem("lg:chat:apiKey", key);
     _setApiKey(key);
@@ -181,6 +174,15 @@ export const StreamProvider: React.FC<{ children: ReactNode }> = ({
   // Determine final values to use, prioritizing URL params then env vars
   const finalApiUrl = apiUrl || envApiUrl;
   const finalAssistantId = assistantId || envAssistantId;
+
+  useEffect(() => {
+    const fetchJwt = async () => {
+      const session = await fetchAuthSession();
+      const token = session.tokens?.idToken?.toString();
+      setJwt(token);
+    };
+    fetchJwt();
+  }, []);
 
   // Show the form if we: don't have an API URL, or don't have an assistant ID
   if (!finalApiUrl || !finalAssistantId) {
@@ -284,15 +286,19 @@ export const StreamProvider: React.FC<{ children: ReactNode }> = ({
     );
   }
 
-  return (
-    <StreamSession
-      apiKey={apiKey}
-      apiUrl={apiUrl}
-      assistantId={assistantId}
-    >
-      {children}
-    </StreamSession>
-  );
+  if (jwt)
+    return (
+      <StreamSession
+        apiKey={apiKey}
+        apiUrl={apiUrl}
+        assistantId={assistantId}
+        jwt={jwt}
+      >
+        {children}
+      </StreamSession>
+    );
+  
+  return <Skeleton />;
 };
 
 // Create a custom hook to use the context

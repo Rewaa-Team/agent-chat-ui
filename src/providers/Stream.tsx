@@ -114,7 +114,7 @@ const StreamSession = ({
   useEffect(() => {
     const fetchJwt = async () => {
       const session = await fetchAuthSession();
-      const token = session.tokens?.accessToken.toString();
+      const token = session.tokens?.idToken?.toString();
       setJwt(token);
     };
 

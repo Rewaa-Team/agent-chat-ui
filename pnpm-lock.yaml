@@ -66,8 +66,8 @@ importers:
         specifier: ^0.16.21
         version: 0.16.22
       langgraph-nextjs-api-passthrough:
-        specifier: ^0.0.4
-        version: 0.0.4(next@15.3.2(@playwright/test@1.52.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))
+        specifier: ^0.1.4
+        version: 0.1.4(next@15.3.2(@playwright/test@1.52.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
@@ -3061,8 +3061,8 @@ packages:
   keyv@4.5.4:
     resolution: {integrity: sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==}
 
-  langgraph-nextjs-api-passthrough@0.0.4:
-    resolution: {integrity: sha512-Hhey2o7/hvbvr4t8qT+w/5YT2L6m381RJ1K6mBQPJt+W2fJJ1youS3EEtVkAHQDJcn1cdCccOc0GTPsqT6F9IQ==}
+  langgraph-nextjs-api-passthrough@0.1.4:
+    resolution: {integrity: sha512-qGjHs8AnyP5XxxparmqkW4H6fHLjAgveCQnKzpBg0QhgyCc5wbGXmjCsh6eMgZ0meT+WS2oy31kNlt7OwPqSig==}
     peerDependencies:
       next: '*'
 
@@ -7810,7 +7810,7 @@ snapshots:
     dependencies:
       json-buffer: 3.0.1
 
-  langgraph-nextjs-api-passthrough@0.0.4(next@15.3.2(@playwright/test@1.52.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)):
+  langgraph-nextjs-api-passthrough@0.1.4(next@15.3.2(@playwright/test@1.52.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)):
     dependencies:
       next: 15.3.2(@playwright/test@1.52.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
 

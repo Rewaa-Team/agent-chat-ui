@@ -38,7 +38,7 @@ export function ThreadProvider({ children }: { children: ReactNode }) {
   const envApiUrl: string | undefined = process.env.NEXT_PUBLIC_API_URL;
   const envAssistantId: string | undefined =
     process.env.NEXT_PUBLIC_ASSISTANT_ID;
-  
+
   const [apiUrl] = useQueryState("apiUrl", {
     defaultValue: envApiUrl || "",
   });
@@ -52,7 +52,7 @@ export function ThreadProvider({ children }: { children: ReactNode }) {
     if (!apiUrl || !assistantId) return [];
 
     const authSession = await fetchAuthSession();
-    const jwt = authSession.tokens?.accessToken.toString();
+    const jwt = authSession.tokens?.idToken?.toString();
     const client = createClient(apiUrl, getApiKey() ?? undefined, jwt);
 
     const threads = await client.threads.search({

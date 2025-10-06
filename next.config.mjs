@@ -7,12 +7,12 @@ const nextConfig = {
   },
   rewrites: async () => {
     return [
-      {
-        source: '/login',
-        destination: '/'
-      }
+        {
+          source: '/login',
+          destination: '/'
+        }
     ]
-  },
+    },
 };
 
 export default nextConfig;

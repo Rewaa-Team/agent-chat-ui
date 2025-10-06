@@ -24,6 +24,8 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { getApiKey } from "@/lib/api-key";
 import { useThreads } from "./Thread";
 import { toast } from "sonner";
+import { fetchAuthSession } from "aws-amplify/auth";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export type StateType = { messages: Message[]; ui?: UIMessage[] };
 
@@ -49,14 +51,16 @@ async function sleep(ms = 4000) {
 async function checkGraphStatus(
   apiUrl: string,
   apiKey: string | null,
+  jwt?: string,
 ): Promise<boolean> {
   try {
     const res = await fetch(`${apiUrl}/info`, {
-      ...(apiKey && {
-        headers: {
+      headers: {
+        Authorization: `Bearer ${jwt}`,
+        ...(apiKey && {
           "X-Api-Key": apiKey,
-        },
-      }),
+        })
+      },
     });
 
     return res.ok;
@@ -71,19 +75,27 @@ const StreamSession = ({
   apiKey,
   apiUrl,
   assistantId,
+  jwt,
 }: {
   children: ReactNode;
   apiKey: string | null;
   apiUrl: string;
   assistantId: string;
+  jwt: string;
 }) => {
   const [threadId, setThreadId] = useQueryState("threadId");
   const { getThreads, setThreads } = useThreads();
+
   const streamValue = useTypedStream({
     apiUrl,
     apiKey: apiKey ?? undefined,
     assistantId,
     threadId: threadId ?? null,
+    defaultHeaders: jwt
+      ? {
+          Authorization: `Bearer ${jwt}`,
+        }
+      : undefined,
     fetchStateHistory: true,
     onCustomEvent: (event, options) => {
       if (isUIMessage(event) || isRemoveUIMessage(event)) {
@@ -102,7 +114,7 @@ const StreamSession = ({
   });
 
   useEffect(() => {
-    checkGraphStatus(apiUrl, apiKey).then((ok) => {
+    checkGraphStatus(apiUrl, apiKey, jwt).then((ok) => {
       if (!ok) {
         toast.error("Failed to connect to LangGraph server", {
           description: () => (
@@ -117,7 +129,7 @@ const StreamSession = ({
         });
       }
     });
-  }, [apiKey, apiUrl]);
+  }, [apiKey, apiUrl, jwt]);
 
   return (
     <StreamContext.Provider value={streamValue}>
@@ -152,6 +164,8 @@ export const StreamProvider: React.FC<{ children: ReactNode }> = ({
     return storedKey || "";
   });
 
+  const [jwt, setJwt] = useState<string | undefined>(undefined);
+
   const setApiKey = (key: string) => {
     window.localStorage.setItem("lg:chat:apiKey", key);
     _setApiKey(key);
@@ -160,6 +174,15 @@ export const StreamProvider: React.FC<{ children: ReactNode }> = ({
   // Determine final values to use, prioritizing URL params then env vars
   const finalApiUrl = apiUrl || envApiUrl;
   const finalAssistantId = assistantId || envAssistantId;
+
+  useEffect(() => {
+    const fetchJwt = async () => {
+      const session = await fetchAuthSession();
+      const token = session.tokens?.idToken?.toString();
+      setJwt(token);
+    };
+    fetchJwt();
+  }, []);
 
   // Show the form if we: don't have an API URL, or don't have an assistant ID
   if (!finalApiUrl || !finalAssistantId) {
@@ -170,11 +193,11 @@ export const StreamProvider: React.FC<{ children: ReactNode }> = ({
             <div className="flex flex-col items-start gap-2">
               <LangGraphLogoSVG className="h-7" />
               <h1 className="text-xl font-semibold tracking-tight">
-                Agent Chat
+                Thaki Agent
               </h1>
             </div>
             <p className="text-muted-foreground">
-              Welcome to Agent Chat! Before you get started, you need to enter
+              Welcome to Thaki Chat! Before you get started, you need to enter
               the URL of the deployment and the assistant / graph ID.
             </p>
           </div>
@@ -263,15 +286,19 @@ export const StreamProvider: React.FC<{ children: ReactNode }> = ({
     );
   }
 
-  return (
-    <StreamSession
-      apiKey={apiKey}
-      apiUrl={apiUrl}
-      assistantId={assistantId}
-    >
-      {children}
-    </StreamSession>
-  );
+  if (jwt)
+    return (
+      <StreamSession
+        apiKey={apiKey}
+        apiUrl={apiUrl}
+        assistantId={assistantId}
+        jwt={jwt}
+      >
+        {children}
+      </StreamSession>
+    );
+  
+  return <Skeleton />;
 };
 
 // Create a custom hook to use the context

@@ -12,6 +12,7 @@ import {
   SetStateAction,
 } from "react";
 import { createClient } from "./client";
+import { fetchAuthSession } from "aws-amplify/auth";
 
 interface ThreadContextType {
   getThreads: () => Promise<Thread[]>;
@@ -34,14 +35,25 @@ function getThreadSearchMetadata(
 }
 
 export function ThreadProvider({ children }: { children: ReactNode }) {
-  const [apiUrl] = useQueryState("apiUrl");
-  const [assistantId] = useQueryState("assistantId");
+  const envApiUrl: string | undefined = process.env.NEXT_PUBLIC_API_URL;
+  const envAssistantId: string | undefined =
+    process.env.NEXT_PUBLIC_ASSISTANT_ID;
+
+  const [apiUrl] = useQueryState("apiUrl", {
+    defaultValue: envApiUrl || "",
+  });
+  const [assistantId] = useQueryState("assistantId", {
+    defaultValue: envAssistantId || "",
+  });
   const [threads, setThreads] = useState<Thread[]>([]);
   const [threadsLoading, setThreadsLoading] = useState(false);
 
   const getThreads = useCallback(async (): Promise<Thread[]> => {
     if (!apiUrl || !assistantId) return [];
-    const client = createClient(apiUrl, getApiKey() ?? undefined);
+
+    const authSession = await fetchAuthSession();
+    const jwt = authSession.tokens?.idToken?.toString();
+    const client = createClient(apiUrl, getApiKey() ?? undefined, jwt);
 
     const threads = await client.threads.search({
       metadata: {

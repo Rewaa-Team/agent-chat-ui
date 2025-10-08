@@ -80,6 +80,6 @@ ENV HOSTNAME="0.0.0.0"
 
 # Health check for ECS
 #HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
-#  CMD curl -f http://0.0.0.0:80/health || exit 1
+#  CMD curl -f http://0.0.0.0:80/api/health || exit 1
 
 CMD ["node", "server.js"]

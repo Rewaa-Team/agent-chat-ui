@@ -51,6 +51,9 @@ RUN \
 FROM base AS runner
 WORKDIR /app
 
+# Install curl for healthcheck
+RUN apk add --no-cache curl
+
 ENV NODE_ENV=production
 # Uncomment the following line in case you want to disable telemetry during runtime.
 # ENV NEXT_TELEMETRY_DISABLED=1
@@ -74,4 +77,9 @@ ENV PORT=80
 # server.js is created by next build from the standalone output
 # https://nextjs.org/docs/pages/api-reference/config/next-config-js/output
 ENV HOSTNAME="0.0.0.0"
+
+# Health check for ECS
+#HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
+#  CMD curl -f http://0.0.0.0:80/health || exit 1
+
 CMD ["node", "server.js"]

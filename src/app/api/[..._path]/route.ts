@@ -9,5 +9,6 @@ export const { GET, POST, PUT, PATCH, DELETE, OPTIONS, runtime } =
     apiKey: process.env.LANGSMITH_API_KEY ?? "remove-me", // default, if not defined it will attempt to read process.env.LANGSMITH_API_KEY
     runtime: "edge", // default
     headers: async () => ({}), // Library works in append mode, but needs an initial object being set to pass through all existing headers
+    filterRequestHeaders: ['x-custom-origin-header'], // To prevent the passthrough being routed back to this server in ALB
     disableWarningLog: true,
   });

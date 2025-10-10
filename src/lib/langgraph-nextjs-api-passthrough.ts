@@ -18,11 +18,12 @@ async function handleRequest(
     headers?: (
       req: NextRequest,
     ) => Record<string, string> | Promise<Record<string, string>>;
+    filterRequestHeaders?: string[];
   },
   req: NextRequest,
   method: string,
 ) {
-  const { apiKey, apiUrl, baseRoute, headers } = args;
+  const { apiKey, apiUrl, baseRoute, headers, filterRequestHeaders } = args;
   try {
     let path = req.nextUrl.pathname.replace(/^\/?api\//, "");
     if (baseRoute) {
@@ -68,6 +69,15 @@ async function handleRequest(
       options.body = JSON.stringify(
         await args.bodyParameters(req, JSON.parse(body)),
       );
+    }
+
+    // If provided, filter out request headers before sending the request
+    if (filterRequestHeaders && filterRequestHeaders.length > 0) {
+      const headersObj = new Headers(options.headers as HeadersInit);
+      for (const headerName of filterRequestHeaders) {
+        headersObj.delete(headerName);
+      }
+      options.headers = Object.fromEntries(headersObj.entries());
     }
 
     console.log("LangGraph API Passthrough Request:");
@@ -147,6 +157,12 @@ export function initApiPassthrough(inputs?: {
   ) => Record<string, string> | Promise<Record<string, string>>;
 
   /**
+   * Headers to remove from the outgoing request before it is sent.
+   * Case-insensitive; e.g. ["authorization", "x-api-key"].
+   */
+  filterRequestHeaders?: string[];
+
+  /**
    * Disable the warning log about using the recommended method of authentication.
    */
   disableWarningLog?: boolean;
@@ -158,6 +174,7 @@ export function initApiPassthrough(inputs?: {
     baseRoute,
     bodyParameters,
     headers,
+    filterRequestHeaders,
     disableWarningLog,
   } = {
     apiKey: inputs?.apiKey ?? process.env.LANGSMITH_API_KEY ?? "",
@@ -166,6 +183,7 @@ export function initApiPassthrough(inputs?: {
     baseRoute: inputs?.baseRoute,
     bodyParameters: inputs?.bodyParameters,
     headers: inputs?.headers,
+    filterRequestHeaders: inputs?.filterRequestHeaders,
     disableWarningLog: inputs?.disableWarningLog,
   };
 
@@ -190,27 +208,35 @@ TypeScript Docs: https://langchain-ai.github.io/langgraphjs/how-tos/auth/custom_
   }
 
   const GET = (req: NextRequest) =>
-    handleRequest({ apiKey, apiUrl, baseRoute, headers }, req, "GET");
+    handleRequest(
+      { apiKey, apiUrl, baseRoute, headers, filterRequestHeaders },
+      req,
+      "GET",
+    );
   const POST = (req: NextRequest) =>
     handleRequest(
-      { apiKey, apiUrl, baseRoute, bodyParameters, headers },
+      { apiKey, apiUrl, baseRoute, bodyParameters, headers, filterRequestHeaders },
       req,
       "POST",
     );
   const PUT = (req: NextRequest) =>
     handleRequest(
-      { apiKey, apiUrl, baseRoute, bodyParameters, headers },
+      { apiKey, apiUrl, baseRoute, bodyParameters, headers, filterRequestHeaders },
       req,
       "PUT",
     );
   const PATCH = (req: NextRequest) =>
     handleRequest(
-      { apiKey, apiUrl, baseRoute, bodyParameters, headers },
+      { apiKey, apiUrl, baseRoute, bodyParameters, headers, filterRequestHeaders },
       req,
       "PATCH",
     );
   const DELETE = (req: NextRequest) =>
-    handleRequest({ apiKey, apiUrl, baseRoute, headers }, req, "DELETE");
+    handleRequest(
+      { apiKey, apiUrl, baseRoute, headers, filterRequestHeaders },
+      req,
+      "DELETE",
+    );
   const OPTIONS = () => {
     return new NextResponse(null, {
       status: 204,

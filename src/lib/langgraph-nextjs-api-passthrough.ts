@@ -80,9 +80,9 @@ async function handleRequest(
       options.headers = Object.fromEntries(headersObj.entries());
     }
 
-    console.log("LangGraph API Passthrough Request:");
-    console.log(`${apiUrl}/${path}${queryString}`);
-    console.log(options);
+    console.debug("LangGraph API Passthrough Request:");
+    console.debug(`${apiUrl}/${path}${queryString}`);
+    console.debug(options);
 
     let res: Response;
 
@@ -96,8 +96,8 @@ async function handleRequest(
     }
 
     // log the response
-    console.log("LangGraph API Passthrough Response:");
-    console.log(res);
+    console.debug("LangGraph API Passthrough Response:");
+    console.debug(res);
 
 
     const responseHeaders: Record<string, string> = {};

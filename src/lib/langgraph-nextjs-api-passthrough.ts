@@ -85,6 +85,10 @@ async function handleRequest(
       throw e;
     }
 
+    // log the response
+    console.log("LangGraph API Passthrough Response:");
+    console.log(res);
+
 
     const responseHeaders: Record<string, string> = {};
     res.headers.forEach((value, key) => {
@@ -100,6 +104,8 @@ async function handleRequest(
       },
     });
   } catch (e: any) {
+    console.error("Error handling LangGraph API Passthrough request:");
+    console.error(e);
     return NextResponse.json({ error: e.message }, { status: e.status ?? 500 });
   }
 }

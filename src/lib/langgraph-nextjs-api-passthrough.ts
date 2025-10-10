@@ -43,7 +43,8 @@ async function handleRequest(
     req.headers.forEach((value, key) => {
       if (
         key.toLowerCase().startsWith("x-") ||
-        key.toLowerCase() === "authorization"
+        key.toLowerCase() === "authorization" ||
+        key.toLowerCase() === "content-type"
       ) {
         originalHeaders[key] = value;
       }

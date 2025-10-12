@@ -6,7 +6,7 @@ import {
 } from "@/lib/ensure-tool-responses";
 import { cn } from "@/lib/utils";
 import { useStreamContext } from "@/providers/Stream";
-import { useAuthenticator } from "@aws-amplify/ui-react";
+import { useAuth } from "@/providers/Auth";
 import { Checkpoint, Message } from "@langchain/langgraph-sdk";
 import { fetchUserAttributes } from "aws-amplify/auth";
 import { motion } from "framer-motion";
@@ -81,7 +81,7 @@ function ScrollToBottom(props: { className?: string }) {
 }
 
 function SignOut() {
-  const { signOut, user } = useAuthenticator();
+  const { signOut } = useAuth();
   const [userName, setUserName] = useState<string | undefined>(undefined);
 
   useEffect(() => {
@@ -93,8 +93,8 @@ function SignOut() {
         console.error("Failed to fetch attributes", err);
       }
     }
-    if (user) load();
-  }, [user]);
+    load();
+  }, []);
 
   return (
     <div className="flex items-center gap-5">

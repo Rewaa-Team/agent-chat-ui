@@ -1,10 +1,35 @@
 "use client";
 
-import { Authenticator } from "@aws-amplify/ui-react";
-import "@aws-amplify/ui-react/styles.css";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { Amplify } from "aws-amplify";
-import { ReactNode } from "react";
+import {
+  fetchAuthSession,
+  signInWithRedirect,
+  signOut,
+} from "aws-amplify/auth";
+import { Hub } from "aws-amplify/utils";
+import {
+  createContext,
+  ReactNode,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 
+interface AuthContextType {
+  signOut: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within AuthProvider");
+  }
+  return context;
+};
 
 Amplify.configure({
   Auth: {
@@ -41,12 +66,122 @@ function getCurrentUrl() {
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    checkAuth();
+
+    // Listen for auth events (like successful sign-in from redirect)
+    const hubListener = Hub.listen("auth", ({ payload }) => {
+      switch (payload.event) {
+        case "signInWithRedirect":
+          checkAuth();
+          break;
+        case "signInWithRedirect_failure":
+          console.error("Sign in failed:", payload.data);
+          setIsAuthenticated(false);
+          break;
+        case "signedOut":
+          setIsAuthenticated(false);
+          break;
+      }
+    });
+
+    // Cleanup listener on unmount
+    return () => hubListener();
+  }, []);
+
+  const checkAuth = async () => {
+    try {
+      setIsLoading(true);
+      const session = await fetchAuthSession();
+      const isAuth = !!(session.tokens?.idToken || session.tokens?.accessToken);
+      setIsAuthenticated(isAuth);
+    } catch (error) {
+      console.error("Error checking auth:", error);
+      setIsAuthenticated(false);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSignIn = async () => {
+    try {
+      await signInWithRedirect({ provider: "Google" });
+    } catch (error) {
+      console.error("Error signing in:", error);
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      setIsAuthenticated(false);
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="mb-4 inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent" />
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="flex h-screen flex-col items-center justify-center gap-4">
+        <Card className="p-8">
+          <CardTitle className="text-center text-lg">Welcome to Thaki Agent</CardTitle>
+          <CardContent>
+            <Button
+              onClick={handleSignIn}
+              className="text-md gap-2 py-6"
+            >
+              <svg
+                width="18"
+                height="18"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 48 48"
+              >
+                <path
+                  fill="#EA4335"
+                  d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
+                />
+                <path
+                  fill="#4285F4"
+                  d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
+                />
+                <path
+                  fill="none"
+                  d="M0 0h48v48H0z"
+                />
+              </svg>
+              Sign in with Google
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
-    <Authenticator
-      hideSignUp
-      socialProviders={["google"]}
-    >
+    <AuthContext.Provider value={{ signOut: handleSignOut }}>
       {children}
-    </Authenticator>
+    </AuthContext.Provider>
   );
 };

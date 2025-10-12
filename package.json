@@ -19,7 +19,6 @@
     "format:check": "prettier --check ."
   },
   "dependencies": {
-    "@aws-amplify/ui-react": "^6.13.0",
     "@langchain/core": "^0.3.44",
     "@langchain/langgraph": "^0.2.63",
     "@langchain/langgraph-sdk": "^0.1.0",
